@@ -6,22 +6,33 @@
 
 import definePlugin, { PluginNative } from "@utils/types";
 import { findByPropsLazy, findStoreLazy } from "@webpack";
-import { ApplicationStreamingStore, ChannelStore, GuildStore, MediaEngineStore, SelectedChannelStore, UserStore, VoiceStateStore } from "@webpack/common";
+import { ApplicationStreamingStore, ChannelStore, GuildMemberStore, GuildStore, MediaEngineStore, SelectedChannelStore, UserStore, VoiceStateStore } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.Kapsula as PluginNative<typeof import("./native")>;
 const SpeakingStore = findStoreLazy("SpeakingStore");
 const AudioActions = findByPropsLazy("toggleSelfMute", "toggleSelfDeaf");
 const ChannelActions = findByPropsLazy("selectVoiceChannel", "selectChannel");
 
-let timer: ReturnType<typeof setInterval> | undefined;
+let running = false;
+let heartbeat: ReturnType<typeof setInterval> | undefined;
+let pending: ReturnType<typeof setTimeout> | undefined;
 let channel: string | null = null;
 let since = 0;
 let last = "";
 let lastAt = 0;
 let retryAt = 0;
-let busy = false;
+let sending = false;
+let again = false;
 
-// What the Kapsula island shows: where you are, since when, and what is on or off
+function isSpeaking(userId: string) {
+    try {
+        return !!SpeakingStore.isSpeaking(userId);
+    } catch {
+        return false;
+    }
+}
+
+// What the Kapsula island shows: where you are, since when, who is there and who is talking
 function snapshot() {
     const id = SelectedChannelStore.getVoiceChannelId() ?? null;
     if (id !== channel) {
@@ -29,35 +40,35 @@ function snapshot() {
         since = id ? Date.now() : 0;
     }
     const me = UserStore.getCurrentUser()?.id;
-    let name = "";
-    let guild = "";
-    let users = 0;
-    let video = false;
-    let speaking = false;
-    if (id) {
-        const ch = ChannelStore.getChannel(id);
-        name = ch?.name ?? "";
-        if (ch?.guild_id) guild = GuildStore.getGuild(ch.guild_id)?.name ?? "";
-        const states = Object.values(VoiceStateStore.getVoiceStatesForChannel(id) ?? {});
-        users = states.length;
-        for (const s of states) {
-            if (s.userId === me) video = !!s.selfVideo;
-            try {
-                if (SpeakingStore.isSpeaking(s.userId)) speaking = true;
-            } catch { }
-        }
-    }
+    const ch = id ? ChannelStore.getChannel(id) : null;
+    const guildId = ch?.guild_id ?? null;
+    const states = id ? Object.values(VoiceStateStore.getVoiceStatesForChannel(id) ?? {}) : [];
+    const people = states.slice(0, 12).map(s => {
+        const u = UserStore.getUser(s.userId);
+        return {
+            id: s.userId,
+            name: (guildId ? GuildMemberStore.getNick(guildId, s.userId) : null) ?? u?.globalName ?? u?.username ?? "",
+            avatar: u?.getAvatarURL(guildId, 64, false) ?? "",
+            speaking: isSpeaking(s.userId),
+            mute: !!(s.selfMute || s.mute),
+            deaf: !!(s.selfDeaf || s.deaf),
+            video: !!s.selfVideo,
+            stream: !!s.selfStream,
+            me: s.userId === me
+        };
+    });
     return {
         inCall: id != null,
-        channel: name,
-        guild,
-        users,
+        channel: ch?.name ?? "",
+        guild: guildId ? GuildStore.getGuild(guildId)?.name ?? "" : "",
+        users: states.length,
         mute: MediaEngineStore.isSelfMute(),
         deaf: MediaEngineStore.isSelfDeaf(),
         stream: ApplicationStreamingStore.getCurrentUserActiveStream() != null,
-        video,
-        speaking,
-        since
+        video: people.some(p => p.me && p.video),
+        speaking: people.some(p => p.speaking),
+        since,
+        people
     };
 }
 
@@ -69,18 +80,29 @@ function run(cmd: string) {
     } catch { }
 }
 
-async function tick() {
+function runAll(reply: string | null) {
+    if (!reply) return;
+    try {
+        const { commands } = JSON.parse(reply);
+        if (Array.isArray(commands)) commands.forEach(run);
+    } catch { }
+}
+
+async function send(force: boolean) {
     const now = Date.now();
-    if (busy || now < retryAt) return;
+    if (now < retryAt) return;
+    if (sending) {
+        again = true;
+        return;
+    }
     let body: string;
     try {
         body = JSON.stringify(snapshot());
     } catch {
         return;
     }
-    // changes go out right away, otherwise a short "still here" every few seconds
-    if (body === last && now - lastAt < 3000) return;
-    busy = true;
+    if (!force && body === last && now - lastAt < 3000) return;
+    sending = true;
     try {
         const reply = await Native.send(body);
         if (reply == null) {
@@ -91,25 +113,67 @@ async function tick() {
         }
         last = body;
         lastAt = now;
-        const { commands } = JSON.parse(reply);
-        if (Array.isArray(commands)) commands.forEach(run);
-    } catch { } finally {
-        busy = false;
+        runAll(reply);
+    } finally {
+        sending = false;
+        if (again) {
+            again = false;
+            send(false);
+        }
     }
 }
 
+// Discord changed something: tell the island right away (changes that come in a burst go out together)
+function changed() {
+    if (pending) return;
+    pending = setTimeout(() => {
+        pending = undefined;
+        send(false);
+    }, 30);
+}
+
+// Island buttons arrive instantly: there is always a request waiting for the next command
+async function listen() {
+    while (running) {
+        const reply = await Native.wait();
+        if (!running) break;
+        if (reply == null) {
+            await new Promise(r => setTimeout(r, 3000));
+            continue;
+        }
+        runAll(reply);
+    }
+}
+
+const stores = () => [SelectedChannelStore, MediaEngineStore, VoiceStateStore, ApplicationStreamingStore, SpeakingStore];
+
 export default definePlugin({
     name: "Kapsula",
-    description: "Shows your Discord call on the Kapsula island (channel, call time, mute, deafen, screen share) and lets you mute, deafen or leave right from the island",
+    description: "Shows your Discord call on the Kapsula island (channel, time, who is talking, mute, deafen, screen share) and lets you mute, deafen or leave right from the island",
     authors: [{ name: "cxxperman", id: 0n }],
     enabledByDefault: true,
 
     start() {
-        timer = setInterval(tick, 500);
+        running = true;
+        for (const store of stores()) {
+            try {
+                store.addChangeListener(changed);
+            } catch { }
+        }
+        heartbeat = setInterval(() => send(false), 1000);
+        listen();
     },
 
     stop() {
-        clearInterval(timer);
+        running = false;
+        for (const store of stores()) {
+            try {
+                store.removeChangeListener(changed);
+            } catch { }
+        }
+        clearInterval(heartbeat);
+        clearTimeout(pending);
+        pending = undefined;
         channel = null;
         last = "";
     }
