@@ -1,0 +1,105 @@
+name: Kapsula build
+
+# Official Vencord + the Kapsula plugin. Every few hours: take the latest Vencord, build, publish as "DevBuild <hash>".
+# Vencord's own updater inside Discord reads this repository's latest release, so updates keep the plugin.
+on:
+    push:
+        branches:
+            - main
+    schedule:
+        - cron: "23 */3 * * *"
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+concurrency:
+    group: kapsula-build
+    cancel-in-progress: false
+
+env:
+    FORCE_COLOR: true
+
+jobs:
+    Build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Sync with Vencord
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git remote add upstream https://github.com/Vendicated/Vencord.git
+                  git fetch --no-tags upstream main
+                  if git merge-base --is-ancestor upstream/main HEAD; then
+                      echo "Already up to date with Vencord"
+                      exit 0
+                  fi
+                  git merge --no-commit --no-ff upstream/main || true
+                  # Vencord's own workflows are not ours: keep only this one
+                  for f in $(git ls-files .github/workflows | grep -v '/kapsula.yml$' | sort -u); do
+                      git rm -q -f --cached "$f" || true
+                      rm -f "$f"
+                  done
+                  git checkout HEAD -- .github/workflows/kapsula.yml
+                  if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+                      echo "Merge conflict outside of workflows:"
+                      git diff --name-only --diff-filter=U
+                      exit 1
+                  fi
+                  git commit -q -m "Sync with Vencord"
+                  git push origin HEAD:main
+
+            - name: Check whether this build is already published
+              id: check
+              run: |
+                  HASH=$(git rev-parse --short HEAD)
+                  echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+                  TITLE=$(gh release view devbuild --json name --jq .name 2>/dev/null || true)
+                  if [ "$TITLE" = "DevBuild $HASH" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup pnpm
+              if: steps.check.outputs.skip != 'true'
+              uses: pnpm/action-setup@v4
+
+            - name: Use Node.js
+              if: steps.check.outputs.skip != 'true'
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: "pnpm"
+
+            - name: Install dependencies
+              if: steps.check.outputs.skip != 'true'
+              run: pnpm install --frozen-lockfile
+
+            - name: Build
+              if: steps.check.outputs.skip != 'true'
+              run: pnpm build --standalone
+              env:
+                  VENCORD_REMOTE: ${{ github.repository }}
+
+            - name: Check that the Kapsula plugin is in the build
+              if: steps.check.outputs.skip != 'true'
+              run: grep -q '"Kapsula"' dist/renderer.js
+
+            - name: Publish DevBuild
+              if: steps.check.outputs.skip != 'true'
+              run: |
+                  rm -rf dist/*-unpacked dist/vendor
+                  if ! gh release view devbuild >/dev/null 2>&1; then
+                      gh release create devbuild --title "DevBuild $HASH" --latest \
+                          --notes "Official Vencord with the Kapsula plugin, rebuilt automatically from every Vencord update. Install it from Kapsula: Settings → Steam и Discord → «Звонки Discord на острове»."
+                  fi
+                  gh release upload devbuild --clobber dist/*
+                  gh release edit devbuild --title "DevBuild $HASH" --latest
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  HASH: ${{ steps.check.outputs.hash }}
