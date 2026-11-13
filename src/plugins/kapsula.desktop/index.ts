@@ -8,7 +8,7 @@ import { getUserSettingLazy } from "@api/UserSettings";
 import { IS_WINDOWS } from "@utils/constants";
 import definePlugin, { PluginNative } from "@utils/types";
 import { findByCodeLazy, findByPropsLazy, findStoreLazy } from "@webpack";
-import { ApplicationStreamingStore, ChannelStore, GuildMemberStore, GuildStore, MediaEngineStore, PermissionsBits, PermissionStore, SelectedChannelStore, UserStore, VoiceStateStore } from "@webpack/common";
+import { ApplicationStreamingStore, CallStore, ChannelStore, GuildMemberStore, GuildStore, MediaEngineStore, PermissionsBits, PermissionStore, RelationshipStore, RestAPI, SelectedChannelStore, UserStore, VoiceStateStore } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.Kapsula as PluginNative<typeof import("./native")>;
 const SpeakingStore = findStoreLazy("SpeakingStore");
@@ -49,6 +49,37 @@ function isSpeaking(userId: string) {
     }
 }
 
+function nameOf(userId: string) {
+    const u = UserStore.getUser(userId);
+    return RelationshipStore.getNickname(userId) ?? u?.globalName ?? u?.username ?? "";
+}
+
+// Someone is calling you: the island shows it like a phone does, with decline and accept
+function incoming(current: string | null, me: string | undefined) {
+    if (!me) return null;
+    const call = (CallStore.getCalls() ?? []).find(c => c?.ringing?.includes(me) && c.channelId !== current);
+    const ch = call ? ChannelStore.getChannel(call.channelId) : null;
+    if (!ch) return null;
+    // the caller is already in the call; in a DM it is the other person anyway
+    const callerId = Object.values(VoiceStateStore.getVoiceStatesForChannel(ch.id) ?? {}).map(s => s.userId).find(u => u !== me)
+        ?? ch.recipients?.find(u => u !== me);
+    const group = ch.isGroupDM();
+    return {
+        channel: ch.id,
+        name: group ? ch.name || (ch.recipients ?? []).slice(0, 3).map(nameOf).join(", ") : callerId ? nameOf(callerId) : "",
+        caller: callerId ? nameOf(callerId) : "",
+        avatar: callerId ? UserStore.getUser(callerId)?.getAvatarURL(null, 128, false) ?? "" : "",
+        group
+    };
+}
+
+// Stop ringing just for you, as declining in Discord does; others in a group call keep ringing
+function decline(channelId: string) {
+    const me = UserStore.getCurrentUser()?.id;
+    if (!me) return;
+    RestAPI.post({ url: `/channels/${channelId}/call/stop-ringing`, body: { recipients: [me] } }).catch(() => { });
+}
+
 // What the Kapsula island shows: where you are, since when, who is there and who is talking
 function snapshot() {
     const id = SelectedChannelStore.getVoiceChannelId() ?? null;
@@ -57,6 +88,10 @@ function snapshot() {
         since = id ? Date.now() : 0;
     }
     const me = UserStore.getCurrentUser()?.id;
+    let ring: ReturnType<typeof incoming> = null;
+    try {
+        ring = incoming(id, me);
+    } catch { }
     const ch = id ? ChannelStore.getChannel(id) : null;
     const guildId = ch?.guild_id ?? null;
     const states = id ? Object.values(VoiceStateStore.getVoiceStatesForChannel(id) ?? {}) : [];
@@ -88,6 +123,7 @@ function snapshot() {
         meSpeaking: !!me && isSpeaking(me),
         since,
         people,
+        incoming: ring,
         ...extra
     };
 }
@@ -159,6 +195,8 @@ function run(cmd: string) {
         else if (cmd === "sources") listSources();
         else if (cmd.startsWith("stream:")) startShare(cmd.slice(7));
         else if (cmd === "unstream") stopShare();
+        else if (/^accept:\d+$/.test(cmd)) ChannelActions.selectVoiceChannel(cmd.slice(7));
+        else if (/^decline:\d+$/.test(cmd)) decline(cmd.slice(8));
     } catch { }
 }
 
@@ -229,11 +267,11 @@ async function listen() {
     }
 }
 
-const stores = () => [SelectedChannelStore, MediaEngineStore, VoiceStateStore, ApplicationStreamingStore, SpeakingStore];
+const stores = () => [SelectedChannelStore, MediaEngineStore, VoiceStateStore, ApplicationStreamingStore, SpeakingStore, CallStore];
 
 export default definePlugin({
     name: "Kapsula",
-    description: "Shows your Discord call on the Kapsula island (channel, time, who is talking, mute, deafen, screen share) and lets you mute, deafen, share your screen or leave right from the island",
+    description: "Shows your Discord call on the Kapsula island (channel, time, who is talking, mute, deafen, screen share, incoming calls) and lets you mute, deafen, share your screen, answer or leave right from the island",
     authors: [{ name: "cxxperman", id: 0n }],
     enabledByDefault: true,
 
