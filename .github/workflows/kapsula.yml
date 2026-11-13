@@ -19,6 +19,8 @@ concurrency:
 
 env:
     FORCE_COLOR: true
+    # releases go to this fork, never to Vencord itself (gh would otherwise pick the parent repository)
+    GH_REPO: ${{ github.repository }}
 
 jobs:
     Build:
