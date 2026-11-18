@@ -1,0 +1,120 @@
+/*
+ * Maska: Discord in the dev.txt look. On while the "Оформление dev.txt" setting is on.
+ *
+ * Every value comes from the kit.txt design tokens (kit/dist/tokens.css, v0.1.0). The --dt-* block below is a
+ * copy of the tokens used here, names and values unchanged: to update, change the tokens and copy them again.
+ * Only Discord's own custom properties and ARIA roles are used, never its generated class names.
+ *
+ * Discord variable                         token
+ * --font-primary                           --dt-font-text (Segoe UI Variable Text)
+ * --font-display, --font-headline          --dt-font-display (Segoe UI Variable Display)
+ * --font-code                              --dt-font-mono
+ * --brand-500, --bg-brand, primary button  --dt-accent (--dt-blue), or the hub.theme accent set at runtime
+ * --brand-360/260, --text-brand, links     the accent mixed with white, as .dt-btn--primary does in kit.css
+ * --brand-560/600, hover and pressed       the accent mixed with black
+ * --background-base-lowest, -tertiary      --dt-bg
+ * --background-base-lower, -secondary      halfway between --dt-bg and --dt-surface
+ * --background-base-low, -primary          --dt-surface
+ * --background-surface-high / -higher      between --dt-surface and --dt-raised
+ * --background-surface-highest, -floating  --dt-raised
+ * --border-subtle                          --dt-separator
+ * --border-normal                          --dt-fill-2
+ * menus: background, border, top edge      --dt-menu, --dt-edge, --dt-edge-top
+ * menus: appearing                         --dt-dur-fast, --dt-ease-out (0ms with reduced motion)
+ *
+ * The one value the tokens do not have yet is the blur behind glass: --maska-blur.
+ * Rounded corners are in rounded.css ("Скруглённые углы").
+ */
+
+:root {
+    --dt-blue: #0a84ff;
+    --dt-accent: var(--dt-blue);
+    --dt-font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --dt-font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --dt-font-mono: "Cascadia Mono", "Consolas", monospace;
+    --dt-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --dt-dur-fast: 180ms;
+    --dt-bg: #09090d;
+    --dt-surface: #151518;
+    --dt-raised: #2c2c31;
+    --dt-separator: rgb(255 255 255 / 0.08);
+    --dt-fill-2: rgb(255 255 255 / 0.14);
+    --dt-edge: rgb(255 255 255 / 0.09);
+    --dt-edge-top: rgb(255 255 255 / 0.17);
+    --dt-menu: rgb(30 30 38 / 0.82);
+
+    /* index.ts replaces these two when hub.theme says so */
+    --maska-accent: var(--dt-accent);
+    --maska-dur: var(--dt-dur-fast);
+    --maska-blur: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --maska-dur: 0ms;
+    }
+}
+
+/* The selectors are doubled only to win over Discord's own declarations of the same variables */
+:root:root {
+    --font-primary: var(--dt-font-text);
+    --font-display: var(--dt-font-display);
+    --font-headline: var(--dt-font-display);
+    --font-code: var(--dt-font-mono);
+
+    --brand-260: color-mix(in srgb, var(--maska-accent), white 45%);
+    --brand-360: color-mix(in srgb, var(--maska-accent), white 24%);
+    --brand-500: var(--maska-accent);
+    --brand-560: color-mix(in srgb, var(--maska-accent), black 12%);
+    --brand-600: color-mix(in srgb, var(--maska-accent), black 24%);
+}
+
+:root:root,
+.theme-dark.theme-dark,
+.theme-darker.theme-darker,
+.theme-midnight.theme-midnight,
+.theme-light.theme-light {
+    --bg-brand: var(--brand-500);
+    --border-focus: var(--brand-500);
+    --control-primary-background-default: var(--brand-500);
+    --control-primary-background-hover: var(--brand-560);
+    --control-primary-background-active: var(--brand-600);
+}
+
+/* Dark surfaces: only where Discord itself is dark, a light Discord keeps its own colours */
+.theme-dark.theme-dark,
+.theme-darker.theme-darker,
+.theme-midnight.theme-midnight {
+    --text-brand: var(--brand-360);
+    --text-link: var(--brand-360);
+
+    --background-base-lowest: var(--dt-bg);
+    --background-base-lower: color-mix(in srgb, var(--dt-bg), var(--dt-surface));
+    --background-base-low: var(--dt-surface);
+    --background-surface-high: color-mix(in srgb, var(--dt-surface) 70%, var(--dt-raised));
+    --background-surface-higher: color-mix(in srgb, var(--dt-surface) 35%, var(--dt-raised));
+    --background-surface-highest: var(--dt-raised);
+    --border-subtle: var(--dt-separator);
+    --border-normal: var(--dt-fill-2);
+
+    /* the same surfaces under the names older parts of Discord still use */
+    --background-tertiary: var(--dt-bg);
+    --background-secondary: color-mix(in srgb, var(--dt-bg), var(--dt-surface));
+    --background-primary: var(--dt-surface);
+    --background-floating: var(--dt-raised);
+}
+
+/* Glass: context menus and dropdowns */
+:is(.theme-dark, .theme-darker, .theme-midnight) [role="menu"] {
+    background: var(--dt-menu);
+    backdrop-filter: blur(var(--maska-blur));
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    animation: maska-appear var(--maska-dur) var(--dt-ease-out);
+}
+
+@keyframes maska-appear {
+    from {
+        opacity: 0;
+    }
+}

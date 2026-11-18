@@ -1,0 +1,27 @@
+/*
+ * Maska: rounded corners, the "Скруглённые углы" setting (only together with the dev.txt look).
+ * Radii from the kit.txt design tokens (kit/dist/tokens.css, v0.1.0), copied unchanged.
+ *
+ * Discord variable        token
+ * --radius-sm  (8px)      --dt-radius-control (11px): buttons, inputs
+ * --radius-md  (12px)     --dt-radius-row (14px): cards, list rows
+ * --radius-lg  (16px)     --dt-radius-block (18px): panels, dialogs
+ * menus                   --dt-radius-row
+ * --radius-xs and the larger steps are left as Discord has them.
+ */
+
+:root {
+    --dt-radius-block: 18px;
+    --dt-radius-row: 14px;
+    --dt-radius-control: 11px;
+}
+
+:root:root {
+    --radius-sm: var(--dt-radius-control);
+    --radius-md: var(--dt-radius-row);
+    --radius-lg: var(--dt-radius-block);
+}
+
+[role="menu"] {
+    border-radius: var(--dt-radius-row);
+}
