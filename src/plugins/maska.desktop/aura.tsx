@@ -201,7 +201,8 @@ function AuraDeck({ deckRef, style }: { deckRef: React.RefObject<HTMLDivElement 
 
     const noMic = (can.sounds && sounds?.mic === false) || (can.effects && effects?.mic === false);
     const shownPads = pads.length > 8 && query ? pads.filter(p => p.name.toLowerCase().includes(query.toLowerCase())) : pads;
-    const open = (label = "Открыть aura.txt") => <button className="dt-btn" onClick={() => run("show")}>{label}</button>;
+    // from the party tab aura.txt opens on its own party page (versions that do not know the page just open)
+    const open = (label = "Открыть aura.txt") => <button className="dt-btn" onClick={() => run("show", { page: "party" })}>{label}</button>;
 
     return (
         <div ref={deckRef} style={style} className="vc-maska-aura vc-maska-aura-deck" role="dialog" aria-label="aura.txt">
@@ -285,8 +286,8 @@ function AuraDeck({ deckRef, style }: { deckRef: React.RefObject<HTMLDivElement 
                                 {!call.on ? (
                                     where === "browser" && call.cable === false ? (
                                         <div className="vc-maska-aura-step">
-                                            <div className="vc-maska-row-text vc-maska-hint">Нужен виртуальный звуковой кабель — ставится в aura.txt</div>
-                                            <button className="dt-btn" onClick={() => run("show")}>Открыть aura.txt</button>
+                                            <div className="vc-maska-row-text vc-maska-hint">Нужен виртуальный звуковой кабель (VB-Cable) — как поставить, показано в aura.txt</div>
+                                            <button className="dt-btn" onClick={() => run("show", { page: "party" })}>Открыть aura.txt</button>
                                         </div>
                                     ) : (
                                         <>
@@ -358,7 +359,7 @@ function AuraDeck({ deckRef, style }: { deckRef: React.RefObject<HTMLDivElement 
                                                 ))}
                                                 <div className="vc-maska-aura-note">
                                                     <span>Что слышат гости, выбирается в aura.txt</span>
-                                                    <button className="vc-maska-aura-link" onClick={() => run("show")}>Открыть</button>
+                                                    <button className="vc-maska-aura-link" onClick={() => run("show", { page: "party" })}>Открыть</button>
                                                 </div>
                                                 <button className="dt-btn vc-maska-aura-wide vc-maska-aura-danger" onClick={() => run("party.stop")}>Остановить</button>
                                             </div>
