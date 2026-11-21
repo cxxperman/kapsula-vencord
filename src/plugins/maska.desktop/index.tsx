@@ -37,7 +37,7 @@ import solidStyle from "./solid.css?managed";
 import { PixelIcon } from "./sprites";
 
 // Sent to the hub in hello; the launcher shows it in hub.apps
-const VERSION = "0.6.0";
+const VERSION = "0.6.1";
 
 const Native = VencordNative.pluginHelpers.Maska as PluginNative<typeof import("./native")>;
 // The same Discord internals as the Kapsula plugin next door (kapsula.desktop), nothing new

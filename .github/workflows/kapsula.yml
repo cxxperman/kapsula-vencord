@@ -63,7 +63,8 @@ jobs:
                   HASH=$(git rev-parse --short HEAD)
                   echo "hash=$HASH" >> "$GITHUB_OUTPUT"
                   TITLE=$(gh release view devbuild --json name --jq .name 2>/dev/null || true)
-                  if [ "$TITLE" = "DevBuild $HASH" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+                  # the title ends with the hash: Vencord's updater reads the last word of it
+                  case "$TITLE" in *" $HASH") echo "skip=true" >> "$GITHUB_OUTPUT" ;; *) echo "skip=false" >> "$GITHUB_OUTPUT" ;; esac
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -97,12 +98,21 @@ jobs:
               if: steps.check.outputs.skip != 'true'
               run: |
                   rm -rf dist/*-unpacked dist/vendor
+                  VERSION=$(grep -oP 'const VERSION = "\K[^"]+' src/plugins/maska.desktop/index.tsx)
+                  # the hash stays the last word: Vencord's updater takes it from there
+                  TITLE="Maska $VERSION · $(date -u +%d.%m.%Y) · $HASH"
+                  {
+                      echo "$NOTES"
+                      echo
+                      # the three newest sections of the list of changes
+                      awk '/^## /{n++} n>=1 && n<=3' MASKA-CHANGES.md
+                  } > "$RUNNER_TEMP/notes.md"
                   if ! gh release view devbuild >/dev/null 2>&1; then
-                      gh release create devbuild --title "DevBuild $HASH" --latest --notes "$NOTES"
+                      gh release create devbuild --title "$TITLE" --latest --notes-file "$RUNNER_TEMP/notes.md"
                   fi
                   gh release upload devbuild --clobber dist/*
-                  gh release edit devbuild --title "DevBuild $HASH" --latest --notes "$NOTES"
+                  gh release edit devbuild --title "$TITLE" --latest --notes-file "$RUNNER_TEMP/notes.md"
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   HASH: ${{ steps.check.outputs.hash }}
-                  NOTES: "Official Vencord with the Maska and Kapsula plugins of dev.txt, rebuilt automatically from every Vencord update. Install it from core.txt: the apps page → Maska → «Подключить»."
+                  NOTES: "Официальный Vencord с плагинами Maska и Kapsula из dev.txt; пересобирается сам при каждом обновлении Vencord. Ставится из core.txt: страница приложений → Maska → «Подключить»."
