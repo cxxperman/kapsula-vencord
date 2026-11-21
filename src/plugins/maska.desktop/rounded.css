@@ -1,27 +1,31 @@
 /*
- * Maska: rounded corners, the "Скруглённые углы" setting (only together with the dev.txt look).
- * Radii from the kit.txt design tokens (kit/dist/tokens.css, v0.1.0), copied unchanged.
- *
- * Discord variable        token
- * --radius-sm  (8px)      --dt-radius-control (11px): buttons, inputs
- * --radius-md  (12px)     --dt-radius-row (14px): cards, list rows
- * --radius-lg  (16px)     --dt-radius-block (18px): panels, dialogs
- * menus                   --dt-radius-row
- * --radius-xs and the larger steps are left as Discord has them.
+ * Maska: rounded corners in the Windows 11 manner, the "Скруглённые углы" setting (only together with the
+ * dev.txt look): messages 8px, menus, popouts, the message box, tiles, embeds and images 10px, dialogs 12px,
+ * channel and member rows 6px. The dev.txt Discord look as it was, kept unchanged.
  */
 
-:root {
-    --dt-radius-block: 18px;
-    --dt-radius-row: 14px;
-    --dt-radius-control: 11px;
+/* === Скругления в стиле Windows 11 === */
+[class*="messageListItem_"] > [class*="message_"],
+[class*="message_"][class*="cozy_"] {
+    border-radius: 8px !important;
 }
-
-:root:root {
-    --radius-sm: var(--dt-radius-control);
-    --radius-md: var(--dt-radius-row);
-    --radius-lg: var(--dt-radius-block);
+[class*="layer_"][class*="clickable_"],
+[class*="menu_"],
+[class*="popout_"],
+[class*="userPopoutOuter"],
+[class*="channelTextArea_"],
+[class*="channelTextArea_"] > [class*="scrollableContainer_"],
+[class*="tile_"],
+[class*="embedFull_"],
+[class*="imageWrapper_"] {
+    border-radius: 10px !important;
 }
-
-[role="menu"] {
-    border-radius: var(--dt-radius-row);
+[role="dialog"][class*="root_"],
+[role="dialog"] > [class*="root_"] {
+    border-radius: 12px !important;
+}
+[class*="sidebar_"] [class*="link_"],
+[class*="sidebar_"] [class*="interactive_"],
+[class*="members_"] [class*="member_"] > div {
+    border-radius: 6px !important;
 }

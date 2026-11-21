@@ -1,0 +1,26 @@
+/*
+ * Maska: no Nitro, shop, gift, boost or quest promos, the "Скрыть рекламу Nitro и заданий" setting. Works
+ * without the dev.txt look too. The dev.txt Discord look as it was, plus the quest cards in lists.
+ */
+
+/* === Скрыть рекламу Nitro / магазина / подарков / бустов / заданий === */
+a[href="/store"],
+a[href="/shop"],
+a[href="/quest-home"],
+button[aria-label="Отправить подарок"],
+button[aria-label="Send a gift"],
+[class*="premiumProgressBar"],
+[class*="questsContainer"],
+[class*="questPromo"],
+[class*="questBar"],
+[class*="quest_"][class*="container_"],
+[class*="nitroUpsell"],
+[class*="upsell_"],
+[class*="premiumUpsell"] {
+    display: none !important;
+}
+
+/* quest cards in lists */
+[class*="itemCard_"]:has([class*="questCard"]) {
+    display: none !important;
+}

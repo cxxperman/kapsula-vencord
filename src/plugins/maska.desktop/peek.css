@@ -1,0 +1,90 @@
+/*
+ * Maska: the maska behind the left edge of the window (peek.tsx), Islands only, with the dev.txt marks and the
+ * sliding server list on. Half of it shows, with one eye; it hides behind the edge while the server list is out.
+ * Ringing: it hops. Mentions: a red eye and the count in a pill beside it. Unread: it looks out a little further. Our own element,
+ * fixed over the columns and under Discord's popups; it never takes the pointer.
+ */
+
+.vc-maska-peek {
+    --maska-peek-size: 56px;
+    /* how much of it shows: about the strip of the server list, so it barely touches the channel island */
+    --maska-peek-shown: 24px;
+    --maska-peek-x: calc(var(--maska-peek-shown) - var(--maska-peek-size));
+
+    position: fixed;
+    left: 0;
+    top: 33%;
+    z-index: 10;
+    pointer-events: none;
+    transform: translateX(var(--maska-peek-x));
+    transition:
+        transform var(--maska-i-base, 250ms) var(--maska-i-ease, cubic-bezier(0, 0, 0, 1)),
+        opacity var(--maska-i-fast, 167ms) var(--maska-i-ease, cubic-bezier(0, 0, 0, 1));
+}
+
+/* While the server list is out the whole maska goes behind the edge, the count with it */
+body:has(nav[class*="guilds_"]:hover, nav[class*="guilds_"]:focus-within) .vc-maska-peek {
+    --maska-peek-x: -100%;
+    opacity: 0;
+}
+
+.vc-maska-peek-body {
+    position: relative;
+    display: flex;
+    image-rendering: pixelated;
+}
+
+.vc-maska-peek-count {
+    position: absolute;
+    /* a small pill above the part that shows, from the window edge: beside it, it lay over the channel names */
+    left: calc(var(--maska-peek-size) - var(--maska-peek-shown) + 2px);
+    bottom: calc(100% + 2px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--status-danger, #f23f43);
+    color: #fff;
+    font:
+        700 11px / 16px "Segoe UI Variable Text",
+        "Segoe UI",
+        system-ui,
+        sans-serif;
+    text-align: center;
+}
+
+@keyframes maska-peek-hop {
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+    }
+
+    20% {
+        transform: translateY(-6px);
+    }
+
+    40% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.vc-maska-peek[data-state="ringing"] .vc-maska-peek-body {
+    animation: maska-peek-hop 900ms var(--maska-i-ease, ease-out) infinite;
+    /* 900 ms, and none when core.txt asks for less motion */
+    animation-duration: calc(var(--maska-dur, 167ms) * 5.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vc-maska-peek {
+        transition: none;
+    }
+
+    .vc-maska-peek[data-state="ringing"] .vc-maska-peek-body {
+        animation: none;
+    }
+}

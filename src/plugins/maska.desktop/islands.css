@@ -1,0 +1,274 @@
+/*
+ * Maska: the "Острова" theme. On with the dev.txt look when the theme setting is Islands, over the transparent
+ * window and over the solid one alike; the Classic files stay as they are and this file is laid on top.
+ *
+ * The columns of Discord stop being one sheet: each one floats as a glass island, as the blocks of the dev.txt
+ * apps do (.dt-block in kit.txt: a glass fill, a thin edge, a lighter top edge), with a gap between the islands
+ * and the window edge through which the window shows. The title bar stays on the window.
+ * Motion from the kit.txt tokens: ease-out cubic-bezier(0, 0, 0, 1), press 83 ms, fast 167 ms, base 250 ms,
+ * slow 333 ms, all through --maska-dur so reduced motion (the system's or core.txt's) turns them off.
+ * The spring is kit.txt's motion.spring.shape (stiffness 250, damping 23, mass 1), sampled into linear().
+ *
+ * Discord has no roles or stable attributes on its columns, so class prefixes it is. :root:root only raises
+ * the specificity over glass.css, which sets some of the same properties with !important.
+ */
+
+:root {
+    --maska-island-gap: 10px;
+    --maska-island-radius: 14px;
+    --maska-island-bg: rgb(255 255 255 / 0.04);
+    --maska-island-shadow: none;
+    --maska-island-edge: rgb(255 255 255 / 0.07);
+    --maska-island-edge-top: rgb(255 255 255 / 0.11);
+    /* a shade lighter on top of an island: the panel at the bottom left, the message box */
+    --maska-island-layer: rgb(255 255 255 / 0.05);
+
+    --maska-i-ease: cubic-bezier(0, 0, 0, 1);
+    --maska-i-spring: linear(
+        0,
+        0.073,
+        0.23,
+        0.412,
+        0.587,
+        0.734,
+        0.849,
+        0.93,
+        0.984,
+        1.015,
+        1.031,
+        1.035,
+        1.033,
+        1.028,
+        1.021,
+        1.015,
+        1.01,
+        1.006,
+        1.003,
+        1.001,
+        1,
+        0.999,
+        0.999,
+        0.999,
+        1
+    );
+    --maska-i-fast: var(--maska-dur, 167ms);
+    --maska-i-press: calc(var(--maska-i-fast) * 0.5);
+    --maska-i-base: calc(var(--maska-i-fast) * 1.5);
+    --maska-i-slow: calc(var(--maska-i-fast) * 2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --maska-i-fast: 0ms;
+    }
+}
+
+/* Islands only: the window shows through lighter, the islands sit darker and denser on top of it */
+:root:root {
+    --maska-window-tint: rgba(5, 5, 5, 0.66);
+}
+
+/* The room around and between the islands: padding on the row that holds the columns, never fixed heights */
+:root:root [class*="base_"] > [class*="content_"] {
+    box-sizing: border-box;
+    /* only between the columns: a row gap here would push the page a few pixels below the channel list */
+    column-gap: var(--maska-island-gap);
+    row-gap: 0;
+    padding: 0 var(--maska-island-gap) var(--maska-island-gap);
+}
+
+/* The islands: the channel list, the panel under it, and the whole page on the right, whatever page it is */
+:root:root
+    :is(
+        [class*="content_"] > div[class*="sidebar_"] > [class*="sidebarList_"],
+        [class*="content_"] > div[class*="sidebar_"] > section[class*="panels_"],
+        [class*="base_"] > [class*="content_"] > [class*="page_"]
+    ) {
+    box-sizing: border-box;
+    background: var(--maska-island-bg) !important;
+    border: 1px solid var(--maska-island-edge) !important;
+    border-top-color: var(--maska-island-edge-top) !important;
+    border-radius: var(--maska-island-radius) !important;
+    box-shadow: var(--maska-island-shadow) !important;
+    /* hidden, not clip: only a scroll container keeps a long chat or list from stretching Discord's grid row */
+    overflow: hidden !important;
+    min-height: 0 !important;
+}
+
+/* Inside the page nothing paints its own sheet over the island */
+:root:root
+    [class*="content_"]
+    > [class*="page_"]
+    :is(
+        [class*="chat_"],
+        [class*="membersWrap_"],
+        [class*="members_"],
+        [class*="tabBody_"],
+        [class*="nowPlayingColumn_"],
+        [class*="callContainer_"],
+        main[class*="container_"]
+    ) {
+    background: transparent !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+}
+
+/* The member list and Active Now part from the main column only by a thin line */
+:root:root
+    [class*="content_"]
+    > [class*="page_"]
+    :is([class*="membersWrap_"], [class*="nowPlayingColumn_"], [class*="searchResultsWrap_"]) {
+    border: none !important;
+    border-left: 1px solid var(--maska-island-edge) !important;
+}
+
+/* The left side as a grid: the server strip over both rows, the channel list above, the panel below it.
+   The panel stops lying over the bottom of the list; the strip keeps its width and its sliding */
+:root:root [class*="content_"] > div[class*="sidebar_"]:not([data-collapsed="true"]) {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    row-gap: var(--maska-island-gap);
+    column-gap: 0;
+}
+
+:root:root [class*="content_"] > div[class*="sidebar_"] > nav[class*="guilds_"] {
+    grid-column: 1;
+    grid-row: 1 / 3;
+}
+
+:root:root
+    [class*="content_"]
+    > div[class*="sidebar_"]:not([data-collapsed="true"])
+    > [class*="sidebarList_"] {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 0;
+}
+
+:root:root [class*="content_"] > div[class*="sidebar_"] > section[class*="panels_"] {
+    grid-column: 2;
+    grid-row: 2;
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background:
+        linear-gradient(var(--maska-island-layer), var(--maska-island-layer)),
+        var(--maska-island-bg) !important;
+}
+
+/* What is inside the panel fills the island edge to edge, with no frame of its own */
+:root:root [class*="content_"] > div[class*="sidebar_"] > section[class*="panels_"] > div {
+    border-radius: 0 !important;
+}
+
+/* Discord keeps room at the bottom of the lists for the panel that used to lie over them */
+:root:root
+    [class*="content_"]
+    > div[class*="sidebar_"]
+    :is(nav[class*="guilds_"], [class*="sidebarList_"] [class*="scroller_"]) {
+    margin-bottom: 0 !important;
+}
+
+/* The channel list of a server keeps that room as padding */
+:root:root [class*="content_"] > div[class*="sidebar_"] [class*="sidebarList_"] nav {
+    padding-bottom: 0 !important;
+}
+
+/* No fading at the bottom of the lists: there is nothing lying over them any more */
+:root:root
+    :is(
+        [class*="sidebar_"] nav[class*="container_"] [class*="scroller_"],
+        [class*="privateChannels_"] > [class*="scroller_"]
+    ) {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    padding-bottom: 8px !important;
+}
+
+/* The message box: a pill, a shade lighter than the island */
+:root:root [class*="page_"] [class*="channelTextArea_"] {
+    border-radius: 20px !important;
+    background: var(--maska-island-layer) !important;
+    margin-bottom: var(--maska-island-gap);
+}
+
+/* Discord slides the message box 16px up over the messages and hides them behind a solid backing. Here the
+   box is see-through, so it stays below the messages and they fade out just above it */
+:root:root [class*="page_"] form[class*="form_"] {
+    margin-top: 0 !important;
+}
+
+:root:root [class*="page_"] [class*="messagesWrapper_"] {
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        #000 calc(100% - 28px),
+        transparent calc(100% - 6px)
+    ) !important;
+    mask-image: linear-gradient(
+        to bottom,
+        #000 calc(100% - 28px),
+        transparent calc(100% - 6px)
+    ) !important;
+}
+
+:root:root [class*="page_"] [class*="channelTextArea_"] > [class*="scrollableContainer_"] {
+    border-radius: 20px !important;
+    background: transparent !important;
+}
+
+/* Motion: what pops up comes in with the spring, from slightly smaller and a little above */
+@keyframes maska-island-pop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.96);
+    }
+}
+
+:root:root :is([role="menu"], [role="tooltip"], [class*="userPopoutOuter"]) {
+    transform-origin: top center;
+    animation: maska-island-pop var(--maska-i-fast) var(--maska-i-spring) !important;
+}
+
+:root:root [role="dialog"][class*="root_"] {
+    transform-origin: center;
+    animation: maska-island-pop var(--maska-i-fast) var(--maska-i-spring) !important;
+}
+
+/* Rows and messages change their background smoothly on hover */
+:root:root
+    :is(
+        [data-list-item-id^="channels___"],
+        [data-list-item-id^="private-channels"],
+        [class*="sidebarList_"] [class*="link_"],
+        [class*="member_"],
+        [id^="chat-messages-"] > [role="article"]
+    ) {
+    transition: background-color var(--maska-i-fast) var(--maska-i-ease) !important;
+}
+
+/* Icon buttons give a little when pressed */
+:root:root :is(button, [role="button"]):has(> svg) {
+    transition: transform var(--maska-i-press) var(--maska-i-ease);
+}
+
+:root:root :is(button, [role="button"]):has(> svg):active {
+    transform: scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root:root
+        :is(
+            [role="menu"],
+            [role="tooltip"],
+            [class*="userPopoutOuter"],
+            [role="dialog"][class*="root_"]
+        ) {
+        animation: none !important;
+    }
+}

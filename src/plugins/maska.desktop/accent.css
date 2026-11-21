@@ -1,0 +1,36 @@
+/*
+ * Maska: Discord's brand colour repainted in the accent chosen in core.txt (hub.theme). On only while the hub
+ * has sent an accent; index.ts sets --maska-accent and --brand-500-hsl then. Without one Discord keeps its own.
+ *
+ * --brand-500, --bg-brand, primary button  --maska-accent
+ * --brand-360/260, --text-brand, links     the accent mixed with white, as .dt-btn--primary does in kit.css
+ * --brand-560/600, hover and pressed       the accent mixed with black
+ */
+
+/* The selectors are doubled only to win over Discord's own declarations of the same variables */
+:root:root {
+    --brand-260: color-mix(in srgb, var(--maska-accent), white 45%);
+    --brand-360: color-mix(in srgb, var(--maska-accent), white 24%);
+    --brand-500: var(--maska-accent);
+    --brand-560: color-mix(in srgb, var(--maska-accent), black 12%);
+    --brand-600: color-mix(in srgb, var(--maska-accent), black 24%);
+}
+
+:root:root,
+.theme-dark.theme-dark,
+.theme-darker.theme-darker,
+.theme-midnight.theme-midnight,
+.theme-light.theme-light {
+    --bg-brand: var(--brand-500);
+    --border-focus: var(--brand-500);
+    --control-primary-background-default: var(--brand-500);
+    --control-primary-background-hover: var(--brand-560);
+    --control-primary-background-active: var(--brand-600);
+}
+
+.theme-dark.theme-dark,
+.theme-darker.theme-darker,
+.theme-midnight.theme-midnight {
+    --text-brand: var(--brand-360);
+    --text-link: var(--brand-360);
+}

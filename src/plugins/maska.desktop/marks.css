@@ -1,0 +1,56 @@
+/*
+ * Maska: the dev.txt marks in Discord's own places, part of the "Знаки dev.txt" setting (the window icon and
+ * the family button are in native.ts and index.tsx). Works without the dev.txt look too.
+ *   the home button at the top of the server list shows the maska icon instead of the Discord logo
+ *   the loading screen shows the maska icon and maska.txt™ instead of the animated Discord logo
+ * The icon is kit.txt's maska sprite (sprites.tsx) as an SVG data URI.
+ */
+
+:root {
+    --maska-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' shape-rendering='crispEdges'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23F08A4B'/%3E%3Crect x='11' y='0' width='1' height='1' fill='%23F08A4B'/%3E%3Crect x='0' y='1' width='2' height='1' fill='%23F08A4B'/%3E%3Crect x='10' y='1' width='2' height='1' fill='%23F08A4B'/%3E%3Crect x='0' y='2' width='12' height='1' fill='%23F08A4B'/%3E%3Crect x='0' y='3' width='3' height='1' fill='%23F08A4B'/%3E%3Crect x='3' y='3' width='1' height='1' fill='%231A1A1E'/%3E%3Crect x='4' y='3' width='4' height='1' fill='%23F08A4B'/%3E%3Crect x='8' y='3' width='1' height='1' fill='%231A1A1E'/%3E%3Crect x='9' y='3' width='3' height='1' fill='%23F08A4B'/%3E%3Crect x='0' y='4' width='3' height='1' fill='%23F08A4B'/%3E%3Crect x='3' y='4' width='1' height='1' fill='%231A1A1E'/%3E%3Crect x='4' y='4' width='4' height='1' fill='%23F08A4B'/%3E%3Crect x='8' y='4' width='1' height='1' fill='%231A1A1E'/%3E%3Crect x='9' y='4' width='3' height='1' fill='%23F08A4B'/%3E%3Crect x='0' y='5' width='12' height='1' fill='%23F08A4B'/%3E%3Crect x='1' y='6' width='4' height='1' fill='%23F08A4B'/%3E%3Crect x='7' y='6' width='4' height='1' fill='%23F08A4B'/%3E%3Crect x='2' y='7' width='2' height='1' fill='%23F08A4B'/%3E%3Crect x='8' y='7' width='2' height='1' fill='%23F08A4B'/%3E%3C/svg%3E");
+}
+
+/* Home: the logo's paths are hidden and the icon is painted in their place, as the star of favourite DMs is */
+[data-list-item-id="guildsnav___home"] svg {
+    background: var(--maska-icon) center / 28px auto no-repeat;
+}
+
+[data-list-item-id="guildsnav___home"] svg path {
+    display: none;
+}
+
+/* Loading screen: Discord's animated logo is a video; it is hidden and the icon and name take its place */
+video[class*="ready_"],
+video[class*="loading_"] {
+    opacity: 0 !important;
+}
+
+:is(div, section):has(> video[class*="ready_"], > video[class*="loading_"]) {
+    position: relative;
+}
+
+:is(div, section):has(> video[class*="ready_"], > video[class*="loading_"])::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--maska-icon) center calc(50% - 24px) / 96px auto no-repeat;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+:is(div, section):has(> video[class*="ready_"], > video[class*="loading_"])::after {
+    content: "maska.txt™";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 96px;
+    font:
+        600 20px / 32px "Segoe UI Variable Display",
+        "Segoe UI",
+        system-ui,
+        sans-serif;
+    color: #fff;
+    pointer-events: none;
+}

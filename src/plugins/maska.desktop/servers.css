@@ -1,0 +1,60 @@
+/*
+ * Maska: the server list folds into a narrow strip and slides out on hover or keyboard focus, the
+ * "Список серверов выезжает при наведении" setting. Works without the dev.txt look too.
+ * It closes 0.3s after the pointer leaves; the left side (servers, channels, panel) is --sidebar-width wide.
+ * The dev.txt Discord look as it was, kept unchanged.
+ */
+
+/* === Список серверов прячется, выезжает при наведении на левый край === */
+/* --guilds-closed: ширина полосы для наведения; --channels-width: ширина списка каналов */
+:root {
+    --guilds-closed: 16px; /* узкая полоса для наведения */
+    --guilds-open: var(--custom-guild-list-width, 72px);
+    --channels-width: 330px;
+}
+/* закрытие: с задержкой 0.3с, чтобы не захлопывалось от случайного движения */
+nav[class*="guilds_"] {
+    width: var(--guilds-closed) !important;
+    min-width: var(--guilds-closed) !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition:
+        width 0.2s cubic-bezier(0.22, 0.8, 0.3, 1) 0.3s,
+        min-width 0.2s cubic-bezier(0.22, 0.8, 0.3, 1) 0.3s !important;
+}
+/* всё скрыто, пока колонка свёрнута */
+nav[class*="guilds_"] [class*="scroller_"] > * {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease 0.3s !important;
+}
+/* открытие: плавно выезжает и раздвигает список каналов */
+nav[class*="guilds_"]:hover,
+nav[class*="guilds_"]:focus-within {
+    width: var(--guilds-open) !important;
+    min-width: var(--guilds-open) !important;
+    transition:
+        width 0.2s cubic-bezier(0.22, 0.8, 0.3, 1),
+        min-width 0.2s cubic-bezier(0.22, 0.8, 0.3, 1) !important;
+}
+nav[class*="guilds_"]:hover [class*="scroller_"] > *,
+nav[class*="guilds_"]:focus-within [class*="scroller_"] > * {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s ease 0.06s !important;
+}
+
+/* вся левая часть (серверы + каналы + панель). --sidebar-width — меняй число */
+:root {
+    --sidebar-width: 440px;
+}
+[class*="content_"] > div[class*="sidebar_"]:not([data-collapsed="true"]) {
+    width: var(--sidebar-width) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+/* Discord считает список каналов как «ширина − 72px серверов»; у нас серверы свёрнуты в полоску */
+div[class*="sidebar_"]:not([data-collapsed="true"]) > [class*="sidebarList_"] {
+    width: calc(var(--sidebar-width) - var(--guilds-closed)) !important;
+}

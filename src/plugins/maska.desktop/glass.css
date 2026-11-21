@@ -1,0 +1,328 @@
+/*
+ * Maska: the transparent window, the "Прозрачное окно" setting. Only together with the dev.txt look and only
+ * while the window has a Windows 11 material under it (Vencord's windowsMaterial, checked in index.ts);
+ * otherwise solid.css draws Discord in solid colours instead.
+ *
+ * The material shows through a dark tint, the columns are transparent, cards and the message box are a faint
+ * white layer, everything that floats is almost opaque. Only Discord's custom properties, ARIA roles and
+ * class prefixes are used, never its generated class names.
+ * Transparency values chosen after the Discord Mica theme (github.com/PL7963/Discord-Mica); the code is our own.
+ *
+ * The second part, from "Скрыть полосы прокрутки" on, is the dev.txt Discord look as it was, kept unchanged.
+ */
+
+:root {
+    /* the darkening over the material: 0 shows only the material, 1 is a solid background */
+    --maska-window-tint: rgba(5, 5, 5, 0.72);
+    --maska-layer: rgb(255 255 255 / 0.05);
+    --maska-flyout: rgba(20, 20, 20, 0.95);
+
+    --custom-app-top-bar-height: calc(24px + var(--space-sm));
+}
+
+/* The tint once, on body; Discord puts the theme class on <html> */
+:root:is(.theme-dark, .theme-darker, .theme-midnight),
+:root:is(.theme-dark, .theme-darker, .theme-midnight) #app-mount {
+    background: transparent !important;
+}
+
+:root:is(.theme-dark, .theme-darker, .theme-midnight) body {
+    background: var(--maska-window-tint) !important;
+}
+
+/* tripled to win over Discord and the other Maska styles whatever order they are in */
+.theme-dark.theme-dark.theme-dark,
+.theme-darker.theme-darker.theme-darker,
+.theme-midnight.theme-midnight.theme-midnight {
+    /* the window itself and the columns that sit straight on it */
+    --app-bg: transparent;
+    --background-base-lowest: transparent;
+    --background-base-lower: transparent;
+    --background-tertiary: transparent;
+    --background-secondary: transparent;
+    --bg-base-primary: transparent;
+    --bg-base-secondary: transparent;
+    --bg-base-tertiary: transparent;
+    --chat-background-default: transparent;
+    --home-background: transparent;
+    --custom-channel-members-bg: transparent;
+    --deprecated-store-bg: transparent;
+    --scrollbar-auto-track: transparent;
+
+    /* layers on the material: cards, the message box, embeds */
+    --background-primary: var(--maska-layer);
+    --background-base-low: var(--maska-layer);
+    --background-secondary-alt: var(--maska-layer);
+    --background-surface-high: var(--maska-layer);
+    --background-surface-higher: rgb(255 255 255 / 0.07);
+    --input-background: var(--maska-layer);
+    --channeltextarea-background: var(--maska-layer);
+    --bg-mod-subtle: rgb(255 255 255 / 0.1);
+    --background-modifier-hover: rgb(255 255 255 / 0.05);
+    --background-modifier-selected: rgb(255 255 255 / 0.07);
+    --background-modifier-active: rgb(255 255 255 / 0.07);
+
+    /* what floats */
+    --background-surface-highest: var(--maska-flyout);
+    --background-floating: var(--maska-flyout);
+}
+
+/* Floating things keep a solid surface even where Discord paints them with a layer colour */
+:is(.theme-dark, .theme-darker, .theme-midnight)
+    :is([role="menu"], [role="listbox"], [role="tooltip"], [class*="userPopoutOuter"]) {
+    background-color: var(--maska-flyout);
+}
+
+/*
+ * Everything that floats over the window (settings, dialogs, popouts, menus) sits in Discord's layer container.
+ * There the surfaces made transparent above get Discord's own colours back, or the window would show through.
+ * The second selector outweighs the tripled one above for the theme classes Discord repeats inside a layer.
+ */
+.theme-dark [class*="layerContainer_"],
+[class*="layerContainer_"] .theme-dark.theme-dark.theme-dark {
+    --background-base-lowest: var(--neutral-73);
+    --background-base-lower: var(--neutral-69);
+    --background-surface-high: var(--neutral-64);
+    --background-surface-higher: var(--neutral-62);
+    --background-surface-highest: var(--neutral-60);
+    --chat-background-default: var(--neutral-64);
+    --home-background: var(--primary-645);
+}
+
+:is(.theme-darker, .theme-midnight) [class*="layerContainer_"],
+[class*="layerContainer_"] .theme-darker.theme-darker.theme-darker,
+[class*="layerContainer_"] .theme-midnight.theme-midnight.theme-midnight {
+    --background-base-lowest: var(--neutral-92);
+    --background-base-lower: var(--neutral-86);
+    --background-surface-high: var(--neutral-79);
+    --background-surface-higher: var(--neutral-76);
+    --background-surface-highest: var(--neutral-73);
+    --chat-background-default: var(--neutral-80);
+    --home-background: var(--plum-18);
+}
+
+/* The call view: no black backing, the material shows through; video tiles keep theirs */
+:is(.theme-dark, .theme-darker, .theme-midnight)
+    :is(
+        [class*="callContainer_"],
+        [class*="callContainer_"] > [class*="root_"],
+        [class*="callContainer_"] [class*="gradientTop"],
+        [class*="callContainer_"] [class*="gradientBottom"],
+        [class*="callContainer_"] [class*="gradientBackground"]
+    ) {
+    background: transparent !important;
+}
+
+/* === Скрыть полосы прокрутки (колёсиком листается как обычно) === */
+::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+* {
+    scrollbar-width: none !important;
+}
+
+/* === Панель внизу слева (игра, войс, профиль): тёмная прозрачная === */
+[class*="panels_"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    --background-secondary-alt: transparent !important;
+    --background-base-low: transparent !important;
+    --background-base-lower: transparent !important;
+    --background-surface-high: transparent !important;
+    --background-tertiary: transparent !important;
+}
+/* Списки каналов и серверов плавно гаснут у нижнего края, чтобы не налезать на панель.
+   --panel-fade: высота затухания (больше = раньше гаснет) */
+:root {
+    --panel-fade: 32px;
+} /* если налезает — увеличь, если большой зазор — уменьши */
+[class*="sidebar_"] nav[class*="container_"] [class*="scroller_"],
+[class*="privateChannels_"] > [class*="scroller_"] {
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        #000 calc(100% - var(--panel-fade) - 20px),
+        transparent calc(100% - var(--panel-fade))
+    ) !important;
+    mask-image: linear-gradient(
+        to bottom,
+        #000 calc(100% - var(--panel-fade) - 20px),
+        transparent calc(100% - var(--panel-fade))
+    ) !important;
+    padding-bottom: var(--panel-fade) !important;
+}
+
+/* Убрать лишние линии-рамки по всему Discord (чат, заголовок, участники, даты) */
+:root,
+.theme-dark,
+.theme-light,
+.visual-refresh {
+    --app-frame-border: transparent !important;
+    --border-subtle: transparent !important;
+    --border-faint: transparent !important;
+    --border-normal: transparent !important;
+    --border-muted: transparent !important;
+    --background-modifier-accent: transparent !important;
+    --divider-subtle: transparent !important;
+}
+/* у дат в чате оставляем только текст, без линии */
+[class*="divider_"][role="separator"],
+[class*="divider_"][class*="hasContent_"] {
+    border-top-color: transparent !important;
+}
+/* рамка вокруг области чата и списка участников */
+[class*="chat_"],
+[class*="chatContent_"],
+[class*="membersWrap_"],
+[class*="members_"],
+[class*="page_"],
+[class*="container_"][class*="themed_"] {
+    border: none !important;
+    box-shadow: none !important;
+}
+[class*="sidebar_"],
+[class*="sidebarList_"],
+[class*="sidebar_"] > nav,
+[class*="sidebar_"] nav[class*="container_"] {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* панель внизу: одинаковые отступы у блока войса и строки профиля */
+section[class*="panels_"] {
+    padding: 0 8px 8px !important;
+    box-sizing: border-box !important;
+}
+section[class*="panels_"] > div:not([class*="noFillPlaceholder"]) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+/* блок «Голосовая связь подключена» */
+section[class*="panels_"] > [class*="wrapper_"] > [class*="container_"] {
+    padding: 10px 12px !important;
+}
+/* строка профиля */
+section[class*="panels_"] > [class*="container_"] {
+    padding: 8px 12px !important;
+}
+section[class*="panels_"] [class*="accountPopoutButtonWrapper"] {
+    margin-left: 0 !important;
+}
+section[class*="panels_"] [class*="fitInAccount"] {
+    width: 100% !important;
+    left: 0 !important;
+}
+
+/* Метка непрочитанного у канала: целиком внутри списка, а не обрезана краем */
+[class*="sidebarList_"] [class*="unread_"] {
+    left: -4px !important;
+    width: 4px !important;
+    border-radius: 4px !important;
+}
+
+/* Избранные ЛС: звёздочка вместо булавки */
+svg[class*="favoriteIcon_"] path {
+    display: none !important;
+}
+svg[class*="favoriteIcon_"] {
+    background-color: currentColor !important;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5l2.95 6.1 6.7.9-4.9 4.65 1.2 6.65L12 17.6l-5.95 3.2 1.2-6.65-4.9-4.65 6.7-.9z'/%3E%3C/svg%3E")
+        center / 14px no-repeat !important;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5l2.95 6.1 6.7.9-4.9 4.65 1.2 6.65L12 17.6l-5.95 3.2 1.2-6.65-4.9-4.65 6.7-.9z'/%3E%3C/svg%3E")
+        center / 14px no-repeat !important;
+}
+
+/* строка профиля внизу (ник + микрофон/наушники/шестерёнка) */
+[class*="panels_"] section,
+[class*="panels_"] [class*="avatarWrapper_"],
+[class*="panels_"] section > div {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+[class*="panels_"] > *,
+[class*="panels_"] [class*="container_"],
+[class*="panels_"] [class*="activityPanel"],
+[class*="panels_"] [class*="wrapper_"] {
+    background-color: transparent !important;
+}
+
+/* === Модальные окна (выбор трансляции, настройки и т.п.): тёмные === */
+:root {
+    --modal-background: rgba(12, 12, 12, 0.94) !important;
+    --modal-footer-background: rgba(8, 8, 8, 0.94) !important;
+}
+[role="dialog"][class*="root_"],
+[role="dialog"] > [class*="root_"],
+[class*="modal_"][class*="root_"] {
+    background: rgba(12, 12, 12, 0.94) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+[role="dialog"] [class*="footer_"] {
+    background: transparent !important;
+}
+/* вкладки «Приложения / Весь экран / Устройства» */
+[role="dialog"] [role="tablist"] {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* === Убрать серые полоски-разделители в списке каналов === */
+[class*="sidebar_"] {
+    --background-modifier-accent: transparent !important;
+    --border-subtle: transparent !important;
+    --border-faint: transparent !important;
+    --border-normal: transparent !important;
+}
+[class*="sidebar_"] [class*="divider"],
+[class*="sidebar_"] [class*="separator"],
+[class*="sidebar_"] hr {
+    display: none !important;
+}
+[class*="sidebar_"] header,
+[class*="sidebar_"] [class*="header_"],
+[class*="sidebar_"] [class*="container_"] {
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* === Войс/звонок: убираем чёрный фон, чтобы был виден блюр === */
+[class*="callContainer_"],
+[class*="callContainer_"] [class*="wrapper_"]:not([class*="tile"]),
+[class*="callContainer_"] [class*="root_"]:not([class*="tile"]),
+[class*="callContainer_"] [class*="videoGrid"],
+[class*="callContainer_"] [class*="gradientBackground"],
+[class*="callContainer_"] [class*="gradientTop"],
+[class*="callContainer_"] [class*="gradientBottom"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* === Плавные наведения (только список каналов — дёшево) и появление меню === */
+[class*="sidebarList_"] [class*="link_"] {
+    transition: background-color 0.12s ease !important;
+}
+@keyframes mica-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+[class*="menu_"][role="menu"],
+[class*="userPopoutOuter"] {
+    animation: mica-pop 0.12s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

@@ -1,0 +1,133 @@
+/*
+ * Maska: the aura.txt button in the account panel and its popout (aura.tsx), the "aura.txt в панели звонка"
+ * setting. The kit.txt elements come from kit.css (.vc-maska-aura is in its scope); this is the layout and the
+ * primary button, which kit.css does not have. Works in both themes and without the dev.txt look.
+ */
+
+.vc-maska-aura-icon {
+    position: relative;
+    display: inline-flex;
+}
+
+.vc-maska-aura-dot {
+    position: absolute;
+    right: -2px;
+    top: -2px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #f08a4b;
+    box-shadow: 0 0 0 2px var(--background-base-low, #202020);
+}
+
+.vc-maska-aura-popout {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 320px;
+    max-height: min(560px, 70vh);
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: var(--dt-radius-block);
+    background: var(--dt-menu);
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.36);
+    font: 400 var(--dt-size-body) / 1.4 var(--dt-font-text);
+    color: var(--dt-label);
+}
+
+.vc-maska-aura-popout * {
+    box-sizing: border-box;
+}
+
+.vc-maska-aura-popout h3 {
+    margin: 0;
+    font: 600 var(--dt-size-body) / 1.4 var(--dt-font-display);
+}
+
+.vc-maska-aura-head,
+.vc-maska-aura-title,
+.vc-maska-aura-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vc-maska-aura-head,
+.vc-maska-aura-title {
+    justify-content: space-between;
+}
+
+.vc-maska-aura-title {
+    margin-bottom: 8px;
+}
+
+.vc-maska-aura-row {
+    flex-wrap: wrap;
+}
+
+.vc-maska-aura .dt-btn {
+    min-width: 0;
+    height: 28px;
+    padding: 0 12px 1px;
+}
+
+.vc-maska-aura .dt-btn--primary {
+    --tint: var(--dt-accent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--tint), white 12%), var(--tint));
+    border-color: rgb(255 255 255 / 0.22);
+    color: #fff;
+}
+
+.vc-maska-aura .dt-btn:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.vc-maska-aura-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+/* sound names are long: two columns, so more of the name shows */
+.vc-maska-aura-grid-wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vc-maska-aura .vc-maska-aura-pad {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 400;
+}
+
+.vc-maska-aura .vc-maska-aura-pad[aria-pressed="true"] {
+    background: color-mix(in srgb, #f08a4b 32%, transparent);
+    border-color: color-mix(in srgb, #f08a4b 60%, transparent);
+    font-weight: 600;
+}
+
+.vc-maska-aura-warn {
+    padding: 8px 10px;
+    border-radius: var(--dt-radius-row);
+    background: color-mix(in srgb, #ff9f0a 18%, transparent);
+    font-size: var(--dt-size-caption);
+}
+
+.vc-maska-aura-code {
+    font:
+        600 24px / 1.2 "Cascadia Mono",
+        "Consolas",
+        monospace;
+    letter-spacing: 0.08em;
+    user-select: text;
+}
+
+.vc-maska-aura-error {
+    font-size: var(--dt-size-caption);
+    color: #ff6b5e;
+}

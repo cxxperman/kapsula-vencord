@@ -1,0 +1,15 @@
+/*
+ * Maska: the dev.txt brand orange (--dt-brand from the kit.txt tokens, v0.2.0) on the small marks only, the
+ * "Фирменный цвет в метках" setting: the unread mark left of a channel and the pill left of a server (unread,
+ * hover and the bar of the selected server, which are the same element). Only the colour; glass.css keeps the
+ * shape of the channel mark. Works without the dev.txt look too.
+ */
+
+:root {
+    --maska-brand: #f08a4b;
+}
+
+[class*="sidebarList_"] [class*="unread_"],
+nav[class*="guilds_"] [class*="pill_"] [class*="item_"] {
+    background-color: var(--maska-brand) !important;
+}

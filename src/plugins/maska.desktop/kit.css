@@ -1,0 +1,333 @@
+/*
+ * Maska: the kit.txt elements its own pieces of Discord are drawn with: the dev.txt page in Discord's settings,
+ * the family popout, the family button in the title bar and the aura.txt popout in the voice panel. A subset of kit.txt ui/kit.css with the tokens it
+ * needs (dist/tokens.css, v0.2.0), names and values unchanged, everything scoped to Maska's own containers so
+ * Discord is not touched. On while the plugin is.
+ */
+
+.vc-maska-page,
+.vc-maska-family,
+.vc-maska-aura {
+    --dt-brand: #f08a4b;
+    --dt-blue: #0a84ff;
+    --dt-green: #6ccb5f;
+    --dt-accent: var(--dt-blue);
+    --dt-radius-block: 8px;
+    --dt-radius-row: 4px;
+    --dt-font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --dt-font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --dt-size-title: 20px;
+    --dt-size-body: 14px;
+    --dt-size-caption: 12px;
+    --dt-ease-out: cubic-bezier(0, 0, 0, 1);
+    --dt-dur-press: 83ms;
+    --dt-dur-fast: 167ms;
+    --dt-dur-base: 250ms;
+    --dt-label: #ffffff;
+    --dt-label-2: rgb(255 255 255 / 0.786);
+    --dt-label-3: rgb(255 255 255 / 0.544);
+    --dt-fill: rgb(255 255 255 / 0.0605);
+    --dt-fill-2: rgb(255 255 255 / 0.0837);
+    --dt-edge: rgb(255 255 255 / 0.0698);
+    --dt-edge-top: rgb(255 255 255 / 0.093);
+    --dt-menu: rgb(44 44 44 / 0.96);
+    --dt-glass: linear-gradient(180deg, rgb(255 255 255 / 0.0605), rgb(255 255 255 / 0.0605));
+    --dt-glass-hover: linear-gradient(180deg, rgb(255 255 255 / 0.0837), rgb(255 255 255 / 0.0837));
+    --dt-glass-strong: linear-gradient(
+        180deg,
+        rgb(255 255 255 / 0.0512),
+        rgb(255 255 255 / 0.0512)
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vc-maska-page,
+    .vc-maska-family,
+    .vc-maska-aura {
+        --dt-dur-press: 0ms;
+        --dt-dur-fast: 0ms;
+        --dt-dur-base: 0ms;
+    }
+}
+
+.vc-maska-page {
+    font: 400 var(--dt-size-body) / 1.4 var(--dt-font-text);
+    color: var(--dt-label);
+    -webkit-font-smoothing: antialiased;
+}
+
+.vc-maska-page *,
+.vc-maska-page *::before,
+.vc-maska-page *::after {
+    box-sizing: border-box;
+}
+
+.vc-maska-page button,
+.vc-maska-page input {
+    font: inherit;
+    color: inherit;
+}
+
+.vc-maska-page :focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--dt-accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+/* Glass: block and list row */
+:is(.vc-maska-page, .vc-maska-aura) :is(.dt-block, .dt-row) {
+    position: relative;
+    background: var(--dt-glass);
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-block {
+    border-radius: var(--dt-radius-block);
+    padding: 18px;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-row {
+    border-radius: var(--dt-radius-row);
+    padding: 10px 14px;
+}
+
+/* Capsule button */
+:is(.vc-maska-page, .vc-maska-aura) .dt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 96px;
+    padding: 0 16px 1px;
+    border-radius: 16px;
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    background: var(--dt-glass);
+    font-weight: 600;
+    font-size: var(--dt-size-body);
+    color: var(--dt-label);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: transform var(--dt-dur-fast) var(--dt-ease-out);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-btn:hover {
+    background: var(--dt-glass-hover);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-btn:active {
+    transform: scale(0.965);
+    transition-duration: var(--dt-dur-press);
+}
+
+/* Switch: <label class="dt-switch"><input type="checkbox"><i></i></label> */
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch i {
+    position: relative;
+    flex: none;
+    width: 46px;
+    height: 28px;
+    border-radius: 14px;
+    background: var(--dt-fill-2);
+    transition: background var(--dt-dur-base) ease-in-out;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch i::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1.5px 6px rgb(0 0 0 / 0.28);
+    transition: transform var(--dt-dur-base) ease-in-out;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch input:checked + i {
+    background: var(--dt-green);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch input:checked + i::after {
+    transform: translateX(18px);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-switch input:focus-visible + i {
+    outline: 3px solid color-mix(in srgb, var(--dt-accent) 55%, transparent);
+    outline-offset: 1px;
+}
+
+/* Choice of several: <div class="dt-seg" role="radiogroup"><button aria-checked="true">…</button>…</div> */
+:is(.vc-maska-page, .vc-maska-aura) .dt-seg {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 3px;
+    border-radius: 16px;
+    background: var(--dt-glass);
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-seg button {
+    height: 26px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    background: none;
+    font-size: var(--dt-size-body);
+    color: var(--dt-label-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform var(--dt-dur-fast) var(--dt-ease-out);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-seg button:hover {
+    color: var(--dt-label);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-seg button:active {
+    transform: scale(0.97);
+    transition-duration: var(--dt-dur-press);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-seg button[aria-checked="true"] {
+    background: var(--dt-glass-strong);
+    border-color: var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    color: var(--dt-label);
+    font-weight: 600;
+}
+
+/* Product name: maska<i>.txt</i><sup>™</sup> */
+:is(.vc-maska-page, .vc-maska-family, .vc-maska-aura) .dt-brand {
+    font-family: var(--dt-font-display);
+    font-weight: 600;
+    text-transform: lowercase;
+    white-space: nowrap;
+}
+
+:is(.vc-maska-page, .vc-maska-family, .vc-maska-aura) .dt-brand i {
+    font-style: normal;
+    color: var(--dt-label-2);
+}
+
+:is(.vc-maska-page, .vc-maska-family, .vc-maska-aura) .dt-brand sup {
+    font-size: 0.5em;
+    font-weight: 400;
+    color: var(--dt-label-3);
+    vertical-align: top;
+    line-height: 1.6;
+}
+
+/* Icon tile */
+:is(.vc-maska-page, .vc-maska-aura) .dt-tile {
+    display: inline-grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    flex: none;
+    border-radius: var(--dt-radius-row);
+    background: var(--dt-fill);
+    border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-tile svg {
+    width: 36px;
+    height: 36px;
+}
+
+/* Maska's own layout on top of the kit elements */
+.vc-maska-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vc-maska-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: var(--dt-size-title);
+}
+
+.vc-maska-page h3 {
+    margin: 0 0 8px;
+    font: 600 var(--dt-size-body) / 1.4 var(--dt-font-display);
+    color: var(--dt-label);
+}
+
+.vc-maska-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+:is(.vc-maska-page, .vc-maska-aura) .dt-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vc-maska-row-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.vc-maska-hint {
+    font-size: var(--dt-size-caption);
+    color: var(--dt-label-3);
+}
+
+/* The family popout under the title bar button */
+.vc-maska-popout {
+    width: 300px;
+    padding: 8px;
+    border-radius: var(--dt-radius-block);
+    background: var(--dt-menu);
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.36);
+}
+
+.vc-maska-popout .dt-btn {
+    min-width: 0;
+    height: 28px;
+    padding: 0 12px 1px;
+}
+
+/* The family button in the title bar */
+.vc-maska-family {
+    -webkit-app-region: no-drag;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    margin: 0 4px;
+    padding: 0 8px;
+    border: none;
+    border-radius: var(--dt-radius-row);
+    background: none;
+    color: var(--dt-label);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.vc-maska-family:hover,
+.vc-maska-family[aria-expanded="true"] {
+    background: var(--dt-fill-2);
+}

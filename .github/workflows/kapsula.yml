@@ -88,20 +88,21 @@ jobs:
               env:
                   VENCORD_REMOTE: ${{ github.repository }}
 
-            - name: Check that the Kapsula plugin is in the build
+            # core.txt recognises our build by these names in renderer.js
+            - name: Check that the Kapsula and Maska plugins are in the build
               if: steps.check.outputs.skip != 'true'
-              run: grep -q '"Kapsula"' dist/renderer.js
+              run: grep -q '"Kapsula"' dist/renderer.js && grep -q '"Maska"' dist/renderer.js
 
             - name: Publish DevBuild
               if: steps.check.outputs.skip != 'true'
               run: |
                   rm -rf dist/*-unpacked dist/vendor
                   if ! gh release view devbuild >/dev/null 2>&1; then
-                      gh release create devbuild --title "DevBuild $HASH" --latest \
-                          --notes "Official Vencord with the Kapsula plugin, rebuilt automatically from every Vencord update. Install it from Kapsula: Settings → Steam и Discord → «Звонки Discord на острове»."
+                      gh release create devbuild --title "DevBuild $HASH" --latest --notes "$NOTES"
                   fi
                   gh release upload devbuild --clobber dist/*
-                  gh release edit devbuild --title "DevBuild $HASH" --latest
+                  gh release edit devbuild --title "DevBuild $HASH" --latest --notes "$NOTES"
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   HASH: ${{ steps.check.outputs.hash }}
+                  NOTES: "Official Vencord with the Maska and Kapsula plugins of dev.txt, rebuilt automatically from every Vencord update. Install it from core.txt: the apps page → Maska → «Подключить»."

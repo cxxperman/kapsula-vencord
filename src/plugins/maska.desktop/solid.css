@@ -1,0 +1,92 @@
+/*
+ * Maska: Discord in solid Windows 11 dark colours, for when the window is not transparent (the
+ * "Прозрачное окно" setting is off, or the window has no Windows 11 material). On together with the dev.txt
+ * look and never together with glass.css. Values from the kit.txt tokens in maska.css.
+ *
+ * Discord variable                         token
+ * --background-base-lowest, -tertiary      --dt-bg
+ * --background-base-lower, -secondary      halfway between --dt-bg and --dt-surface
+ * --background-base-low, -primary          --dt-surface
+ * --background-surface-high / -higher      between --dt-surface and --dt-raised
+ * --background-surface-highest, -floating  --dt-raised
+ * --background-modifier-hover / -selected  --dt-fill / --dt-fill-2
+ * --border-subtle                          --dt-separator
+ * --border-normal                          --dt-fill-2
+ * menus: background, border, top edge      --dt-menu, --dt-edge, --dt-edge-top
+ * menus: appearing                         --dt-dur-fast, --dt-ease-out (0ms with reduced motion)
+ * scroll bars                              thin, --maska-scroll-thumb, no track
+ *
+ * Values the tokens do not have: the blur behind menus (--maska-blur) and the scroll bar thumb (--maska-scroll-*).
+ */
+
+:root {
+    --maska-blur: 30px;
+    --maska-scroll-thumb: rgb(255 255 255 / 0.2);
+    --maska-scroll-thumb-hover: rgb(255 255 255 / 0.36);
+}
+
+/* Only where Discord itself is dark, a light Discord keeps its own colours */
+.theme-dark.theme-dark,
+.theme-darker.theme-darker,
+.theme-midnight.theme-midnight {
+    --background-base-lowest: var(--dt-bg);
+    --background-base-lower: color-mix(in srgb, var(--dt-bg), var(--dt-surface));
+    --background-base-low: var(--dt-surface);
+    --background-surface-high: color-mix(in srgb, var(--dt-surface) 70%, var(--dt-raised));
+    --background-surface-higher: color-mix(in srgb, var(--dt-surface) 35%, var(--dt-raised));
+    --background-surface-highest: var(--dt-raised);
+    --background-modifier-hover: var(--dt-fill);
+    --background-modifier-selected: var(--dt-fill-2);
+    --background-modifier-active: var(--dt-fill-press);
+    --border-subtle: var(--dt-separator);
+    --border-normal: var(--dt-fill-2);
+
+    /* the same surfaces under the names older parts of Discord still use */
+    --background-tertiary: var(--dt-bg);
+    --background-secondary: color-mix(in srgb, var(--dt-bg), var(--dt-surface));
+    --background-primary: var(--dt-surface);
+    --background-floating: var(--dt-raised);
+
+    /* thin, quiet scroll bars without a track */
+    --scrollbar-thin-thumb: var(--maska-scroll-thumb);
+    --scrollbar-thin-track: transparent;
+    --scrollbar-auto-thumb: var(--maska-scroll-thumb);
+    --scrollbar-auto-track: transparent;
+    --scrollbar-auto-scrollbar-color-thumb: var(--maska-scroll-thumb);
+    --scrollbar-auto-scrollbar-color-track: transparent;
+}
+
+/* Discord's wide scroll bar ("auto") drawn as thin as the thin one; scrollers Discord hides stay hidden */
+:is(.theme-dark, .theme-darker, .theme-midnight) [class*="auto_"]::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+:is(.theme-dark, .theme-darker, .theme-midnight)
+    :is([class*="auto_"], [class*="thin_"])::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    background-clip: padding-box;
+    min-height: 40px;
+}
+
+:is(.theme-dark, .theme-darker, .theme-midnight)
+    :is([class*="auto_"], [class*="thin_"])::-webkit-scrollbar-thumb:hover {
+    background-color: var(--maska-scroll-thumb-hover);
+}
+
+/* Glass: context menus and dropdowns */
+:is(.theme-dark, .theme-darker, .theme-midnight) [role="menu"] {
+    background: var(--dt-menu);
+    backdrop-filter: blur(var(--maska-blur));
+    border: 1px solid var(--dt-edge);
+    border-top-color: var(--dt-edge-top);
+    animation: maska-appear var(--maska-dur) var(--dt-ease-out);
+}
+
+@keyframes maska-appear {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+}
