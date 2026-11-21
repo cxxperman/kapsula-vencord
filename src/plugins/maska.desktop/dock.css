@@ -1,0 +1,11 @@
+/*
+ * Maska: the sliding server list in the Islands theme. On while both Islands and the
+ * "Список серверов выезжает при наведении" setting are on. The list opens as servers.css opens it, pushing the
+ * channel list aside; this only moves the strip that opens it to the very edge of the window.
+ *
+ * With the islands' gap on the left the strip started 10px in: a pointer thrown against the edge of the window
+ * (or of the screen) landed in the gap and opened nothing, and the 16px strip had to be aimed at.
+ */
+:root:root:root [class*="base_"] > [class*="content_"] {
+    padding-left: 0 !important;
+}

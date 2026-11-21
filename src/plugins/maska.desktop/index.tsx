@@ -14,12 +14,13 @@ import { removeFromArray } from "@utils/misc";
 import { relaunch } from "@utils/native";
 import definePlugin, { IconProps, OptionType, PluginNative } from "@utils/types";
 import { findByPropsLazy, findStoreLazy } from "@webpack";
-import { Alerts, ApplicationStreamingStore, CallStore, ChannelStore, createRoot, FluxDispatcher, GuildMemberStore, GuildStore, MediaEngineStore, RelationshipStore, RestAPI, SelectedChannelStore, UserStore, VoiceStateStore } from "@webpack/common";
+import { Alerts, ApplicationStreamingStore, CallStore, ChannelStore, createRoot, FluxDispatcher, GuildMemberStore, GuildStore, MediaEngineStore, RelationshipStore, RestAPI, SelectedChannelStore, useEffect, UserStore, useState, VoiceStateStore } from "@webpack/common";
 
 import accentStyle from "./accent.css?managed";
-import { AURA_TOPICS, AuraButton, resetAura, setAuraState } from "./aura";
+import { AURA_TOPICS, mountAuraCall, resetAura, setAuraState, unmountAuraCall } from "./aura";
 import auraStyle from "./aura.css?managed";
 import brandStyle from "./brand.css?managed";
+import dockStyle from "./dock.css?managed";
 import { Brand, FamilyButton, FamilyList, setApps } from "./family";
 import glassStyle from "./glass.css?managed";
 import islandsStyle from "./islands.css?managed";
@@ -28,7 +29,7 @@ import marksStyle from "./marks.css?managed";
 import themeStyle from "./maska.css?managed";
 import { Peek } from "./peek";
 import peekStyle from "./peek.css?managed";
-import { applyPreset, PRESET_VERSION } from "./preset";
+import { getSnapshot, installPreset, PRESET_VERSION, restoreSnapshot, Snapshot } from "./preset";
 import promosStyle from "./promos.css?managed";
 import roundedStyle from "./rounded.css?managed";
 import serversStyle from "./servers.css?managed";
@@ -36,7 +37,7 @@ import solidStyle from "./solid.css?managed";
 import { PixelIcon } from "./sprites";
 
 // Sent to the hub in hello; the launcher shows it in hub.apps
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 
 const Native = VencordNative.pluginHelpers.Maska as PluginNative<typeof import("./native")>;
 // The same Discord internals as the Kapsula plugin next door (kapsula.desktop), nothing new
@@ -56,8 +57,8 @@ const settings = definePluginSettings({
         type: OptionType.SELECT,
         description: "Theme: Classic (the dev.txt look) or Islands (floating glass panels, motion)",
         options: [
-            { label: "Classic", value: "classic", default: true },
-            { label: "Islands", value: "islands" }
+            { label: "Classic", value: "classic" },
+            { label: "Islands", value: "islands", default: true }
         ],
         onChange: settingsChanged
     },
@@ -264,7 +265,7 @@ function settingGroups() {
                 item("slimServers", "Список серверов выезжает при наведении", "Пока мышь не у левого края, список свёрнут в узкую полоску"),
                 item("familyMarks", "Знаки dev.txt", "Значок окна, кнопка семейства, кнопка „Домой“ и экран загрузки"),
                 item("brandAccents", "Фирменный цвет в метках", "Оранжевые метки непрочитанного и выбранного сервера"),
-                item("auraPanel", "aura.txt в панели звонка", "Звуки, эффекты и пати у кнопки микрофона")
+                item("auraPanel", "aura.txt в панели звонка", "Звуки, эффекты и пати в панели голосовой связи")
             ]
         },
         {
@@ -326,6 +327,7 @@ function SettingsPage() {
                 <h3>Семейство</h3>
                 <FamilyList />
             </div>
+            <SetupBlock />
         </div>
     );
 }
@@ -354,11 +356,6 @@ function unmountPeek() {
     peekNode?.remove();
     peekRoot = null;
     peekNode = null;
-}
-
-function AuraPanelButton(props?: { nameplate?: unknown; }) {
-    const { auraPanel } = settings.use(["auraPanel"]);
-    return auraPanel ? <AuraButton nameplate={props?.nameplate} /> : null;
 }
 
 function TitleBarButton() {
@@ -411,14 +408,73 @@ function askRestart(body: string) {
     FluxDispatcher.subscribe("CONNECTION_OPEN", ready);
 }
 
-// The plugin set, once per PRESET_VERSION; the first time also the material for the transparent window
-function applyPresetOnce() {
-    const applied = settings.store.presetApplied;
-    if (applied >= PRESET_VERSION) return;
-    let changed = applyPreset(applied);
-    if (applied === 0 && settings.store.glass && ensureAcrylic()) changed = true;
+// The dev.txt setup, once per PRESET_VERSION: the snapshot, then Vencord (preset.ts), then Maska's own
+// switches at their defaults and Islands. A snapshot that could not be written stops it until the next start
+async function installOnce() {
+    if (settings.store.presetApplied >= PRESET_VERSION) return;
+    let changed: boolean;
+    try {
+        changed = await installPreset();
+    } catch {
+        return;
+    }
+    if (!running) return;
+    for (const key of SWITCHES) {
+        if (settings.store[key] === true) continue;
+        settings.store[key] = true;
+        changed = true;
+    }
+    if (settings.store.look !== "islands") {
+        settings.store.look = "islands";
+        changed = true;
+    }
     settings.store.presetApplied = PRESET_VERSION;
-    if (changed) askRestart("Maska turned on its plugin set. Restart Discord to finish.");
+    if (changed) askRestart("Maska set up Discord the dev.txt way: plugin set, theme and window. Restart Discord to finish. Your previous Vencord settings are saved — you can bring them back in Settings → dev.txt.");
+}
+
+// Back to the Vencord settings from before the setup; Maska itself stays, only its look and set come off
+function askRestore() {
+    Alerts.show({
+        title: "Maska",
+        body: "Вернуть настройки Vencord, которые были до Maska? Набор плагинов, темы и оформление dev.txt будут сняты. Discord перезапустится.",
+        confirmText: "Вернуть",
+        cancelText: "Отмена",
+        async onConfirm() {
+            try {
+                if (!await restoreSnapshot()) return;
+            } catch {
+                return;
+            }
+            settings.store.theme = false;
+            settings.store.slimServers = false;
+            settings.store.hidePromos = false;
+            settings.store.brandAccents = false;
+            // the settings reach the disk through IPC: a moment for them before the app goes
+            setTimeout(relaunch, 500);
+        }
+    });
+}
+
+function SetupBlock() {
+    const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+    useEffect(() => {
+        getSnapshot().then(s => setSnapshot(s ?? null), () => { });
+    }, []);
+    if (!snapshot) return null;
+    const date = (ms: number) => new Date(ms).toLocaleDateString("ru-RU");
+    return (
+        <div className="dt-block">
+            <h3>Установка</h3>
+            <div className="dt-row">
+                <div className="vc-maska-row-text">
+                    {snapshot.restoredAt
+                        ? `Прежние настройки возвращены ${date(snapshot.restoredAt)}`
+                        : `Discord настроен в стиле dev.txt ${date(snapshot.at)}. Прежние настройки Vencord сохранены`}
+                </div>
+                {!snapshot.restoredAt && <button className="dt-btn" onClick={askRestore}>Вернуть прежние настройки</button>}
+            </div>
+        </div>
+    );
 }
 
 function glassChanged(on: boolean) {
@@ -440,11 +496,14 @@ function applyLook() {
     setStyle(roundedStyle, on && settings.store.rounded);
     setStyle(promosStyle, running && settings.store.hidePromos);
     setStyle(serversStyle, running && settings.store.slimServers);
+    setStyle(dockStyle, on && settings.store.look === "islands" && settings.store.slimServers);
     setStyle(kitStyle, running);
     setStyle(brandStyle, running && settings.store.brandAccents);
     setStyle(marksStyle, running && settings.store.familyMarks);
     setStyle(peekStyle, running);
     setStyle(auraStyle, running && settings.store.auraPanel);
+    if (running && settings.store.auraPanel) mountAuraCall();
+    else unmountAuraCall();
     if (!on) {
         runtimeStyle?.remove();
         runtimeStyle = null;
@@ -573,15 +632,6 @@ export default definePlugin({
 
     patches: [
         {
-            // the account panel at the bottom left, where GameActivityToggle puts its button: before the mic.
-            // Its own insertion may already sit right after children:[ and is allowed for
-            find: "#{intl::USER_PROFILE_ACCOUNT_POPOUT_BUTTON_A11Y_LABEL}",
-            replacement: {
-                match: /children:\[(?=(?:Vencord\.Plugins\.plugins\["GameActivityToggle"\]\.GameActivityToggleButton\(arguments\[0\]\),)?.{0,25}?accountContainerRef)/,
-                replace: "children:[$self.renderAuraButton(arguments[0]),"
-            }
-        },
-        {
             // the place VencordToolbox puts its button too: the trailing buttons of the title bar (Inbox, Help)
             find: '?"BACK_FORWARD_NAVIGATION":',
             replacement: {
@@ -591,14 +641,12 @@ export default definePlugin({
         }
     ],
 
-    renderAuraButton: ErrorBoundary.wrap(AuraPanelButton, { noop: true }),
-
     renderTitleBarButton: ErrorBoundary.wrap(() => <TitleBarButton key="vc-maska-family" />, { noop: true }),
 
     start() {
         running = true;
         windowMaterial ??= Settings.windowsMaterial;
-        applyPresetOnce();
+        installOnce();
         applyLook();
         Native.start(VERSION, Object.keys(commands), ["hub.theme", "hub.apps", ...AURA_TOPICS]);
         Native.setIcon(settings.store.familyMarks);
